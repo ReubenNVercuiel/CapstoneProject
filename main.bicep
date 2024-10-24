@@ -1,7 +1,8 @@
 param location string = resourceGroup().location
-param nameSuffix string = concat('mbrg-capstone-project-', (resourceGroup().id)
+param nameSuffix string = 'mbrg-capstone-project-${(resourceGroup().id)}'
 
 // Stack configuration
+
 @description('The Things Stack Cluster HTTP Address')
 param stackClusterAddress string = 'https://mdrgconsulting.nam1.cloud.thethings.industries/api/v3'
 
@@ -12,22 +13,29 @@ param stackApplicationID string = 'capstone-smartfarming'
 @description('The Things Stack API Key')
 param stackAPIKey string = 'NNSXS.IWGII4PFVCT2R3LTDMMPCMHLDFLARKZWXVT47DA.7SGK4F6ECTDY2U5BDO2NZJLF433X4UOULWBGK7532PCTCIPWYVQQ'
 
+// B2C Creation
+param b2cTenantName string = 'mbrg-capstone-project-B2C-Tenant'
+param b2cLocation string = location
+
 // SKU configuration
-param eventHubNameSpaceSKU string = 'Standard'
-
-// Free SKU for IoT Hub
-param iotHubSKU string = 'F1'
-param iotHubCapacity int = 1
-
-param storageAccountSKU string = 'Standard_LRS'
-
-// Y1 has a free component to it
-param appServicePlanSKU string = 'Y1'
-param appServicePlanTier string = 'Dynamic'
+var eventHubNameSpaceSKU = 'Standard'
+var iotHubSKU = 'F1'
+var iotHubCapacity = 1
+var storageAccountSKU = 'Standard_LRS'
+var appServicePlanSKU = 'Y1'
+var appServicePlanTier = 'Dynamic'
+var b2cSKU = 'PremiumP1'
+var b2cTier = 'A0'
 
 // IoT Hub configuration
 @description('If enabled, the default IoT Hub fallback route will be added')
 param enableFallbackRoute bool = true
+
+//Database admin Username and pass
+param adminUsername string = 'sql-Admin'
+
+@secure()
+param adminPassword string = 'sql-Admin-Pass'
 
 // Resource names
 var functionAppName = 'fn-${nameSuffix}'
@@ -42,12 +50,50 @@ var functionFullName = '${functionApp.name}/${functionName}'
 var eventHubName = 'Events'
 var eventHubFullName = '${eventHubNamespace.name}/${eventHubName}'
 var eventHubEndpointName = 'StackEvents'
+var sqlServerName = 'sqp-${nameSuffix}'
+var sqlDatabaseName = 'userDB-${nameSuffix}'
+
 
 // Outputs
 output iotHubHostname string = iotHub.properties.hostName
 output iotHubOwnerKey string = iotHub.listKeys().value[0].primaryKey
+output b2cTenantId string = b2c.properties.tenantId
+output sqlDatabaseConnectionString string = 'Server=tcp:${sqlServerName}.database.windows.net,1433;Initial Catalog=${sqlDatabaseName};Persist Security Info=False;User ID=${adminUsername};Password=${adminPassword};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
 
 // Resources
+resource b2c 'Microsoft.AzureActiveDirectory/b2cDirectories@2023-05-17-preview' = {
+  name:b2cTenantName
+  location: b2cLocation
+  properties: {
+    createTenantProperties: {
+      countryCode: 'CA'
+      displayName: 'MBRG Consulting'
+    }
+  }
+  sku: {
+    name: b2cSKU
+    tier: b2cTier
+  }
+}
+
+resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
+  name: sqlServerName
+  location: location
+  properties: {
+    administratorLogin: adminUsername
+    administratorLoginPassword:adminPassword
+  }
+}
+
+resource sqlDatabase 'Microsoft.Sql/servers/databases@2023-08-01-preview'= {
+  parent: sqlServer
+  name: sqlDatabaseName
+  location: location
+  properties: {
+    collation:'SQL_Latin1_General_CP1_CI_AS'
+  }
+}
+
 resource eventHubNamespace 'Microsoft.EventHub/namespaces@2023-01-01-preview' = {
   name: eventHubNamespaceName
   location: location
