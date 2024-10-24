@@ -1,25 +1,27 @@
 param location string = resourceGroup().location
-param nameSuffix string = uniqueString(resourceGroup().id)
+param nameSuffix string = concat('mbrg-capstone-project-', (resourceGroup().id)
 
 // Stack configuration
 @description('The Things Stack Cluster HTTP Address')
-param stackClusterAddress string = 'https://tenant.region.cloud.thethings.industries/api/v3'
+param stackClusterAddress string = 'https://mdrgconsulting.nam1.cloud.thethings.industries/api/v3'
 
 @description('The Things Stack Application ID')
-param stackApplicationID string
+param stackApplicationID string = 'capstone-smartfarming'
 
 @secure()
 @description('The Things Stack API Key')
-param stackAPIKey string
+param stackAPIKey string = 'NNSXS.IWGII4PFVCT2R3LTDMMPCMHLDFLARKZWXVT47DA.7SGK4F6ECTDY2U5BDO2NZJLF433X4UOULWBGK7532PCTCIPWYVQQ'
 
 // SKU configuration
 param eventHubNameSpaceSKU string = 'Standard'
 
-param iotHubSKU string = 'S1'
+// Free SKU for IoT Hub
+param iotHubSKU string = 'F1'
 param iotHubCapacity int = 1
 
 param storageAccountSKU string = 'Standard_LRS'
 
+// Y1 has a free component to it
 param appServicePlanSKU string = 'Y1'
 param appServicePlanTier string = 'Dynamic'
 
